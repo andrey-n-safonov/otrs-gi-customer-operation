@@ -1,0 +1,106 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<otrs_config version="2.0" init="Application">
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerUserCreate" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerUserCreate</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerCompanyCreate" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerCompanyCreate</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerCompanyGet" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerCompanyGet</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerUserGet" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerUserGet</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerUserSearch" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerUserSearch</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::CustomerUserSearch###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Maximum number of users to be displayed in the result of this operation.</Description>
+        <Navigation>GenericInterface::Operation::CustomerUserSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^[0-9]{1,2}$">50</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerCompanySearch" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerCompanySearch</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::CustomerCompanySearch###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Maximum number of companies to be displayed in the result of this operation.</Description>
+        <Navigation>GenericInterface::Operation::CustomerCompanySearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^[0-9]{1,2}$">50</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerUserUpdate" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerUserUpdate</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###Customer::CustomerCompanyUpdate" Required="0" Valid="1">
+        <Description Translatable="1">GenericInterface module registration for the operation layer.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">CustomerCompanyUpdate</Item>
+                <Item Key="Controller">Customer</Item>
+                <Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item>
+            </Hash>
+        </Value>
+    </Setting>
+</otrs_config>
