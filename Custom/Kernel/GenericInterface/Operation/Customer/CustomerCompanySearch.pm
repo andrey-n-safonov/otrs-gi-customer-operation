@@ -64,10 +64,12 @@ perform CustomerCompanySearch Operation. This will return a CustomerCompany ID l
 
     my $Result = $OperationObject->Run(
         Data => {
-            UserLogin => 'Agent1',
-            Password  => 'some password',   # plain text password
+            UserLogin => 'Agent1',          # UserLogin or SessionID is
+                                            #   required
+            SessionID => '123',
+            Password  => 'some password',   # if UserLogin or customerUserLogin is sent then
+                                            #   Password is required
             SearchDetail => {
-
                 CustomerID          => 'example*',                                  # (optional)
                 CustomerCompanyName => 'Name*',                                     # (optional)
 
@@ -115,7 +117,8 @@ perform CustomerCompanySearch Operation. This will return a CustomerCompany ID l
         Success      => 1,                                # 0 or 1
         ErrorMessage => '',                               # In case of an error
         Data         => {
-            CustomerIDs => [ 1, 2, 3, 4 ],
+            CustomerIDs => [ 1, 2, 3, 4 ],                # if Result is ARRAY or absent
+            CustomerIDs => 10,                            # # if Result is COUNT
         },
     };
 
@@ -141,28 +144,16 @@ sub Run {
 		ErrorMessage => "CustomerCompanySearch: Authorization failing!",
 	) if !$UserID;
 
-	my $SearchDetail = $Param{Data}->{SearchDetail};
-
-	# get parameter from data
-	my %GetParam = $Self->_GetParams( %{ $Param{Data}->{SearchDetail} } );
-
-	# get dynamic fields
-	my %DynamicFieldSearchParameters = $Self->_GetDynamicFields( %{ $Param{Data}->{SearchDetail} } );
-
 	# perform search
-
-	my @CustomerIDs = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanySearchDetail(
-		%GetParam,
-		%DynamicFieldSearchParameters,
+    my $CustomerIDs = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanySearchDetail(
+            %{ $Param{Data}->{SearchDetail} },
 	);
 
-
-	if (@CustomerIDs) {
-
+	if ($CustomerIDs) {
 		return {
 			Success => 1,
 			Data    => {
-				CustomerIDs => \@CustomerIDs,
+				CustomerIDs => $CustomerIDs,
 			},
 		};
 	}
@@ -170,156 +161,13 @@ sub Run {
 	# return result
 	return {
 		Success => 1,
-		Data    => {},
+		Data    => {
+            CustomerIDs => 0,
+        },
 	};
 }
 
-=begin Internal:
-
-=head2 _GetParams()
-
-get search parameters.
-
-    my %GetParam = _GetParams(
-        %Params,                          # all ticket parameters
-    );
-
-    returns:
-
-    %GetParam = {
-        AllowedParams => 'WithContent', # return not empty parameters for search
-    }
-
-=cut
-
-sub _GetParams {
-    my ( $Self, %Param ) = @_;
-
-    # get single params
-    my %GetParam;
-
-    my %SearchableFields = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanySearchFields();
-
-    for my $Item (
-        sort keys %SearchableFields,
-        qw(Limit Result)
-        )
-    {
-
-        # get search string params (get submitted params)
-        if ( IsStringWithData( $Param{$Item} ) ) {
-
-            $GetParam{$Item} = $Param{$Item};
-
-            # remove white space on the start and end
-            $GetParam{$Item} =~ s/\s+$//g;
-            $GetParam{$Item} =~ s/^\s+//g;
-        }
-    }
-
-    # get array params
-    for my $Item (
-        qw(OrderBy OrderByDirection)
-        )
-    {
-
-        # get search array params
-        my @Values;
-        if ( IsArrayRefWithData( $Param{$Item} ) ) {
-            @Values = @{ $Param{$Item} };
-        }
-        elsif ( IsStringWithData( $Param{$Item} ) ) {
-            @Values = ( $Param{$Item} );
-        }
-        $GetParam{$Item} = \@Values if scalar @Values;
-    }
-
-    return %GetParam;
-
-}
-
-
-=head2 _GetDynamicFields()
-
-get search parameters.
-
-    my %DynamicFieldSearchParameters = _GetDynamicFields(
-        %Params,                          # all ticket parameters
-    );
-
-    returns:
-
-    %DynamicFieldSearchParameters = {
-        'AllAllowedDF' => 'WithData',   # return not empty parameters for search
-    }
-
-=cut
-
-
-sub _GetDynamicFields {
-	my ( $Self, %Param ) = @_;
-
-	# dynamic fields search parameters for ticket search
-	my %DynamicFieldSearchParameters;
-
-	# get single params
-	my %AttributeLookup;
-
-	# get the dynamic fields for ticket object
-	$Self->{DynamicField} = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
-		Valid      => 1,
-		ObjectType => ['CustomerCompany'],
-	);
-
-	my %DynamicFieldsRaw;
-	if ( $Param{DynamicField} ) {
-		my %SearchParams;
-		if ( IsHashRefWithData( $Param{DynamicField} ) ) {
-			$DynamicFieldsRaw{ $Param{DynamicField}->{Name} } = $Param{DynamicField};
-		}elsif ( IsArrayRefWithData( $Param{DynamicField} ) ) {
-			%DynamicFieldsRaw = map { $_->{Name} => $_ } @{ $Param{DynamicField} };
-		}else {
-			return %DynamicFieldSearchParameters;
-		}
-
-	}else {
-
-		# Compatibility with older versions of the web service.
-		for my $ParameterName ( sort keys %Param ) {
-			if ( $ParameterName =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
-				$DynamicFieldsRaw{$1} = $Param{$ParameterName};
-			}
-		}
-	}
-
-	# loop over the dynamic fields configured
-  DYNAMICFIELD:
-	for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-		next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-		next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-
-		# skip all fields that does not match with current field name
-		next DYNAMICFIELD if !$DynamicFieldsRaw{ $DynamicFieldConfig->{Name} };
-
-		next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldsRaw{ $DynamicFieldConfig->{Name} } );
-
-		my %SearchOperators = %{ $DynamicFieldsRaw{ $DynamicFieldConfig->{Name} } };
-
-		delete $SearchOperators{Name};
-
-		# set search parameter
-		$DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = \%SearchOperators;
-	}
-
-	# allow free fields
-
-	return %DynamicFieldSearchParameters;
-
-}
-
 1;
-
-=end Internal:
 
 =head1 TERMS AND CONDITIONS
 

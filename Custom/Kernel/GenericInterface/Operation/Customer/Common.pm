@@ -166,7 +166,7 @@ sub ValidateDynamicFieldValue {
     return if !IsHashRefWithData( $Self->{DynamicFieldLookup} );
 
     # possible structures are string and array, no data inside is needed
-    if ( !IsString( $Param{Value} ) && ref $Param{Value} ne 'ARRAY' ) {
+    if ( !IsStringWithData( $Param{Value} ) && ref $Param{Value} ne 'ARRAY' ) {
         return;
     }
 
@@ -241,7 +241,7 @@ sub SetDynamicFieldValue {
     my ( $Self, %Param ) = @_;
 
     for my $Needed (qw(Name UserID)) {
-        if ( !IsString( $Param{$Needed} ) ) {
+        if ( !IsStringWithData( $Param{$Needed} ) ) {
 			return {
 				ErrorCode => 'CustomerController.SetDynamicFieldValue',
 				ErrorMessage => "SetDynamicFieldValue() Invalid value for $Needed, just string is allowed!",
@@ -250,7 +250,7 @@ sub SetDynamicFieldValue {
     }
 
     # check value structure
-    if ( !IsString( $Param{Value} ) && ref $Param{Value} ne 'ARRAY' ) {
+    if ( !IsStringWithData( $Param{Value} ) && ref $Param{Value} ne 'ARRAY' ) {
         return {
 			ErrorCode => 'CustomerController.SetDynamicFieldValue',
 			ErrorMessage => "SetDynamicFieldValue() Invalid value for Value, just string and array are allowed!"
@@ -305,7 +305,7 @@ sub _CheckDynamicField {
 	# check DynamicField item internally
 	for my $Needed (qw(Name Value)) {
 		if (!defined $DynamicField->{$Needed}
-			|| ( !IsString( $DynamicField->{$Needed} ) && ref $DynamicField->{$Needed} ne 'ARRAY' )){
+			|| ( !IsStringWithData( $DynamicField->{$Needed} ) && ref $DynamicField->{$Needed} ne 'ARRAY' )){
 			return {
 				ErrorCode    => 'CustomerController.MissingParameter',
 				ErrorMessage => "CustomerController: DynamicField->$Needed parameter is missing!",

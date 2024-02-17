@@ -62,8 +62,12 @@ Retrieve a customer user info by id value.
 
     my $Result = $OperationObject->Run(
         Data => {
-            UserLogin => 'Agent1',
-            Password  => 'some password',   # plain text password
+            UserLogin => 'Agent1',          # UserLogin or SessionID is
+                                            #   required
+            SessionID => '123',
+            Password  => 'some password',   # if UserLogin or customerUserLogin is sent then
+                                            #   Password is required
+            CustomerUserID  => 'some user login', # current CustomerUserID (UserLogin by default)
         },
     );
 

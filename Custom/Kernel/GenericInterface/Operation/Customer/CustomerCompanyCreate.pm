@@ -62,8 +62,9 @@ Retrieve a customer user info by id value.
 
     my $Result = $OperationObject->Run(
         Data => {
-            UserLogin => 'Agent1',
-            Password  => 'some password',   # plain text password
+            UserLogin => 'Agent1',            # authorizing by login/password
+            Password  => 'some password',     # plain text password
+			SessionID => 'valid session id',  # or provide valid SessionID
             CustomerCompany => {
                 CustomerID              => 'test',
                 CustomerCompanyName     => 'test company',
@@ -90,7 +91,6 @@ Retrieve a customer user info by id value.
 
 sub Run {
 	my ( $Self, %Param ) = @_;
-
 	my $Result = $Self->Init(WebserviceID => $Self->{WebserviceID},);
 
 	if ( !$Result->{Success} ) {
@@ -108,8 +108,8 @@ sub Run {
 	) if !$UserID;
 
 	# check needed hashes
-	for my $Needed (qw(CustomerCompany)) {
-		if ( !IsHashRefWithData( $Param{Data}->{$Needed} ) ) {
+	for my $Needed (qw(CustomerID CustomerCompanyName)) {
+		if ( !$Param{Data}->{CustomerCompany}->{$Needed} ) {
 			return $Self->ReturnError(
 				ErrorCode    => 'CustomerCompanyCreate.MissingParameter',
 				ErrorMessage => "CustomerCompanyCreate: $Needed  parameter is missing or not valid!",
@@ -140,7 +140,7 @@ sub Run {
 		if ( !$CustomerCompany->{$Needed} ) {
 			return {
 				ErrorCode    => 'CustomerCompanyCreate.MissingParameter',
-				ErrorMessage => "CustomerCompanyCreate: Ticket->$Needed parameter is missing!",
+				ErrorMessage => "CustomerCompanyCreate: CustomerCompany->$Needed parameter is missing!",
 			};
 		}
 	}

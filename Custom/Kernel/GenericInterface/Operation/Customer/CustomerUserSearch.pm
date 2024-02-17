@@ -64,9 +64,12 @@ perform CustomerUserSearch Operation. This will return a CustomerUser ID list.
 
     my $Result = $OperationObject->Run(
         Data => {
-            UserLogin => 'Agent1',
-            Password  => 'some password',   # plain text password
-            SearchDetail => {
+            UserLogin => 'Agent1',          # UserLogin or SessionID is
+                                            #   required
+            SessionID => '123',
+            Password  => 'some password',   # if UserLogin or customerUserLogin is sent then
+                                            #   Password is required
+           SearchDetail => {
 
                 # all search fields possible which are defined in CustomerUser::EnhancedSearchFields
                 UserLogin     => 'example*',                                    # (optional)
@@ -148,25 +151,13 @@ sub Run {
 		ErrorMessage => "CustomerUserSearch: Authorization failing!",
 	) if !$UserID;
 
-	my $SearchDetail = $Param{Data}->{SearchDetail};
-
-	# get parameter from data
-	my %GetParam = $Self->_GetParams( %{ $Param{Data}->{SearchDetail} } );
-
-	# get dynamic fields
-	my %DynamicFieldSearchParameters = $Self->_GetDynamicFields( %{ $Param{Data}->{SearchDetail} } );
-
-	# perform search
-
-	my @CustomerUserIDs = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerSearchDetail(%GetParam,%DynamicFieldSearchParameters,);
-
+	my @CustomerUserIDs = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerSearchDetail(%{ $Param{Data}->{SearchDetail} });
 
 	if (@CustomerUserIDs) {
-
 		return {
 			Success => 1,
 			Data    => {
-				CustomerUserIDs => \@CustomerUserIDs,
+				CustomerUserIDs => @CustomerUserIDs,
 			},
 		};
 	}
@@ -197,125 +188,6 @@ get search parameters.
 =cut
 
 
-sub _GetParams {
-	my ( $Self, %Param ) = @_;
-
-	# get single params
-	my %GetParam;
-
-	my %SearchableFields = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserSearchFields();
-
-	for my $Item (sort keys %SearchableFields,qw(Limit Result)){
-
-		# get search string params (get submitted params)
-		if ( IsStringWithData( $Param{$Item} ) ) {
-
-			$GetParam{$Item} = $Param{$Item};
-
-			# remove white space on the start and end
-			$GetParam{$Item} =~ s/\s+$//g;
-			$GetParam{$Item} =~ s/^\s+//g;
-		}
-	}
-
-	# get array params
-	for my $Item (qw(OrderBy OrderByDirection)){
-
-		# get search array params
-		my @Values;
-		if ( IsArrayRefWithData( $Param{$Item} ) ) {
-			@Values = @{ $Param{$Item} };
-		}elsif ( IsStringWithData( $Param{$Item} ) ) {
-			@Values = ( $Param{$Item} );
-		}
-		$GetParam{$Item} = \@Values if scalar @Values;
-	}
-
-	return %GetParam;
-
-}
-
-
-=head2 _GetDynamicFields()
-
-get search parameters.
-
-    my %DynamicFieldSearchParameters = _GetDynamicFields(
-        %Params,                          # all ticket parameters
-    );
-
-    returns:
-
-    %DynamicFieldSearchParameters = {
-        'AllAllowedDF' => 'WithData',   # return not empty parameters for search
-    }
-
-=cut
-
-
-sub _GetDynamicFields {
-	my ( $Self, %Param ) = @_;
-
-	# dynamic fields search parameters for ticket search
-	my %DynamicFieldSearchParameters;
-
-	# get single params
-	my %AttributeLookup;
-
-	# get the dynamic fields for ticket object
-	$Self->{DynamicField} = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
-		Valid      => 1,
-		ObjectType => ['CustomerUser'],
-	);
-
-	my %DynamicFieldsRaw;
-	if ( $Param{DynamicField} ) {
-		my %SearchParams;
-		if ( IsHashRefWithData( $Param{DynamicField} ) ) {
-			$DynamicFieldsRaw{ $Param{DynamicField}->{Name} } = $Param{DynamicField};
-		}elsif ( IsArrayRefWithData( $Param{DynamicField} ) ) {
-			%DynamicFieldsRaw = map { $_->{Name} => $_ } @{ $Param{DynamicField} };
-		}else {
-			return %DynamicFieldSearchParameters;
-		}
-
-	}else {
-
-		# Compatibility with older versions of the web service.
-		for my $ParameterName ( sort keys %Param ) {
-			if ( $ParameterName =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
-				$DynamicFieldsRaw{$1} = $Param{$ParameterName};
-			}
-		}
-	}
-
-	# loop over the dynamic fields configured
-  DYNAMICFIELD:
-	for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-		next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-		next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
-
-		# skip all fields that does not match with current field name
-		next DYNAMICFIELD if !$DynamicFieldsRaw{ $DynamicFieldConfig->{Name} };
-
-		next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldsRaw{ $DynamicFieldConfig->{Name} } );
-
-		my %SearchOperators = %{ $DynamicFieldsRaw{ $DynamicFieldConfig->{Name} } };
-
-		delete $SearchOperators{Name};
-
-		# set search parameter
-		$DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = \%SearchOperators;
-	}
-
-	# allow free fields
-
-	return %DynamicFieldSearchParameters;
-
-}
-
-
-=end Internal:
 
 =head1 TERMS AND CONDITIONS
 

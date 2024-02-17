@@ -62,8 +62,11 @@ Retrieve a customer user info by id value.
 
     my $Result = $OperationObject->Run(
         Data => {
-            UserLogin => 'Agent1',
-            Password  => 'some password',   # plain text password
+            UserLogin => 'Agent1',          # UserLogin or SessionID is
+                                            #   required
+            SessionID => '123',
+            Password  => 'some password',   # if UserLogin or customerUserLogin is sent then
+                                            # Password is required
             CustomerUser => {
                 Source         => 'CustomerUser2'        # not required, set to default 'CustomerUser' if not specified
 				UserFirstname  => 'Huber',               # required
@@ -221,7 +224,7 @@ sub _CustomerUserAdd {
 	return $Self->ReturnError(
 		ErrorCode => 'CustomerUserCreate.ValidateCompany',
 		ErrorMessage =>"CustomerUserCreate: UserCustomerID does not exist!",
-	) if defined $CustomerUser->{UserCustomerID} && !$Self->ValidateCustomerCompany( $CustomerUser->{UserCustomerID} );
+	) if defined $CustomerUser->{UserCustomerID} && !$Self->ValidateCustomerCompany( CustomerID => $CustomerUser->{UserCustomerID} );
 
     # set UserEmail as CustomerID if not given
     $CustomerUser->{UserCustomerID} = $CustomerUser->{UserCustomerID} || $CustomerUser->{UserEmail};

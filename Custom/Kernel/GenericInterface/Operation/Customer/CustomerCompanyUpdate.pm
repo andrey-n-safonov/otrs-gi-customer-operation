@@ -60,8 +60,11 @@ perform CustomerCompanyUpdate Operation. This will return the updated CustomerID
 
     my $Result = $OperationObject->Run(
         Data => {
-            UserLogin         => 'some agent login',                            # UserLogin is required
-            Password  => 'some password',                                       # Password is required
+            UserLogin => 'Agent1',          # UserLogin or SessionID is
+                                            #   required
+            SessionID => '123',
+            Password  => 'some password',   # if UserLogin or customerUserLogin is sent then
+                                            #   Password is required
             CustomerID     => 'example.com',                                    # current CustomerID is required
             CustomerCompany => {
 				CustomerID              => 'anotherexample.com',                # new CustomerID
@@ -134,12 +137,12 @@ sub Run {
 	}
     my $CustomerID = $Param{Data}->{CustomerID};
 
-    if ( !IsHashRefWithData( $Param{Data}->{CustomerCompany} ) ) {
-		return $Self->ReturnError(
-			ErrorCode    => 'CustomerCompanyUpdate.EmptyRequest',
-			ErrorMessage => "CustomerCompanyUpdate: The request data is invalid!",
-		);
-	}
+    # if ( !IsHashRefWithData( $Param{Data}->{CustomerCompany} ) ) {
+	# 	return $Self->ReturnError(
+	# 		ErrorCode    => 'CustomerCompanyUpdate.EmptyRequest',
+	# 		ErrorMessage => "CustomerCompanyUpdate: The request data is invalid!",
+	# 	);
+	# }
 	
 	my $Success = $Self->ValidateCustomerCompany(
 		CustomerID =>  $CustomerID,
@@ -151,22 +154,22 @@ sub Run {
 		);
 	}
 
-	my $CustomerCompany;
 	# isolate CustomerCompany parameter
-	$CustomerCompany = $Param{Data}->{CustomerCompany};
+	my $CustomerCompany = $Param{Data}->{CustomerCompany};
 
 	# remove leading and trailing spaces
-	for my $Attribute ( sort keys %{$CustomerCompany} ) {
-		if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
+	if ( $CustomerCompany ) {
+		for my $Attribute ( sort keys %{$CustomerCompany} ) {
+			if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' && $CustomerCompany->{$Attribute} ) {
 
-			#remove leading spaces
-			$CustomerCompany->{$Attribute} =~ s{\A\s+}{};
+				#remove leading spaces
+				$CustomerCompany->{$Attribute} =~ s{\A\s+}{};
 
-			#remove trailing spaces
-			$CustomerCompany->{$Attribute} =~ s{\s+\z}{};
+				#remove trailing spaces
+				$CustomerCompany->{$Attribute} =~ s{\s+\z}{};
+			}
 		}
 	}
-
 	my $DynamicField;
 	my @DynamicFieldList;
 	my $DynamicFieldObjectID;
@@ -290,30 +293,31 @@ sub _CustomerCompanyUpdate {
 	my $CustomerCompanyObject = $Kernel::OM->Get('Kernel::System::CustomerCompany');
 
 	# get current CustomerCompany data
-	my $CustomerCompanyEntry = $CustomerCompanyObject->CustomerCompanyGet(
-		CustomerID     => $CustomerID,
+	my %CustomerCompanyEntry = $CustomerCompanyObject->CustomerCompanyGet(
+		CustomerID => $CustomerID,
 		UserID         => $UserID,
 	);
 
-	# prepare new CustomerUser data
+	# prepare new CustomerCompany data
 	my %newCustomerCompanyData;
 	$newCustomerCompanyData{UserID} = $UserID;
 	for my $Item ( keys %{$CustomerCompany} ) {
-		if ( $CustomerCompanyEntry->{$Item} ne $CustomerCompany->{$Item} ){
+		if ( $CustomerCompany->{$Item} && 
+		(!$CustomerCompanyEntry{$Item} || $CustomerCompany->{$Item} ne "$CustomerCompanyEntry{$Item}" )){
 			$newCustomerCompanyData{$Item} = $CustomerCompany->{$Item};
 		}
 	}
 
 	if (defined $newCustomerCompanyData{CustomerID}
-		&& $CustomerCompany->{CustomerID} ne ''
-		&& $CustomerCompany->{CustomerID} ne $CustomerID){
+	&& $CustomerCompany->{CustomerID} ne ''
+	&& $CustomerCompany->{CustomerID} ne $CustomerID){
 		$newCustomerCompanyData{CustomerCompanyID} = $CustomerID;
 	}else{
 		$newCustomerCompanyData{CustomerID} = $CustomerID;
 	}		
 	
-	# set required by Kernel::System::CustomerUser::CustomerCompanyUpdate
-	$newCustomerCompanyData{CustomerCompanyName} = $newCustomerCompanyData{CustomerCompanyName} || $CustomerCompanyEntry->{CustomerCompanyName};
+	# set required by Kernel::System::CustomerCompany::CustomerCompanyUpdate
+	$newCustomerCompanyData{CustomerCompanyName} = $newCustomerCompanyData{CustomerCompanyName} || $CustomerCompanyEntry{CustomerCompanyName};
 	# TODO make disable/enable
 	$newCustomerCompanyData{ValidID} = 1;
 
@@ -324,7 +328,7 @@ sub _CustomerCompanyUpdate {
 	if ( !$Success ) {
 		return {
 			Success => 0,
-			Errormessage =>'CustomerCompamy could not be updated, please contact system administrator!',
+			Errormessage =>'CustomerCompany could not be updated, please contact system administrator!',
 		};
 	}else {
 		$CustomerID = $newCustomerCompanyData{CustomerID};
