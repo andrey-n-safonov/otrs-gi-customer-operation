@@ -67,7 +67,7 @@ perform CustomerCompanyUpdate Operation. This will return the updated CustomerID
                                             #   Password is required
             CustomerID     => 'example.com',                                    # current CustomerID is required
             CustomerCompany => {
-				CustomerID              => 'anotherexample.com',                # new CustomerID
+				CustomerCompanyID       => 'anotherexample.com',                # new CustomerID
 				CustomerCompanyName     => 'New Customer Inc.',
 				CustomerCompanyStreet   => '5201 Blue Lagoon Drive',
 				CustomerCompanyZIP      => '33126',
@@ -137,12 +137,12 @@ sub Run {
 	}
     my $CustomerID = $Param{Data}->{CustomerID};
 
-    # if ( !IsHashRefWithData( $Param{Data}->{CustomerCompany} ) ) {
-	# 	return $Self->ReturnError(
-	# 		ErrorCode    => 'CustomerCompanyUpdate.EmptyRequest',
-	# 		ErrorMessage => "CustomerCompanyUpdate: The request data is invalid!",
-	# 	);
-	# }
+    if ( !IsHashRefWithData( $Param{Data}->{CustomerCompany} ) ) {
+		return $Self->ReturnError(
+			ErrorCode    => 'CustomerCompanyUpdate.EmptyRequest',
+			ErrorMessage => "CustomerCompanyUpdate: The request data is invalid!",
+		);
+	}
 	
 	my $Success = $Self->ValidateCustomerCompany(
 		CustomerID =>  $CustomerID,
@@ -307,20 +307,20 @@ sub _CustomerCompanyUpdate {
 			$newCustomerCompanyData{$Item} = $CustomerCompany->{$Item};
 		}
 	}
-
-	if (defined $newCustomerCompanyData{CustomerID}
-	&& $CustomerCompany->{CustomerID} ne ''
-	&& $CustomerCompany->{CustomerID} ne $CustomerID){
-		$newCustomerCompanyData{CustomerCompanyID} = $CustomerID;
-	}else{
-		$newCustomerCompanyData{CustomerID} = $CustomerID;
-	}		
 	
+	if (defined $newCustomerCompanyData{CustomerCompanyID}) {
+		$newCustomerCompanyData{CustomerID} = $newCustomerCompanyData{CustomerCompanyID};
+		$newCustomerCompanyData{CustomerCompanyID} = $CustomerID;
+	}	
+	else {
+		$newCustomerCompanyData{CustomerID} = $CustomerID;
+	}
+
 	# set required by Kernel::System::CustomerCompany::CustomerCompanyUpdate
 	$newCustomerCompanyData{CustomerCompanyName} = $newCustomerCompanyData{CustomerCompanyName} || $CustomerCompanyEntry{CustomerCompanyName};
+	
 	# TODO make disable/enable
 	$newCustomerCompanyData{ValidID} = 1;
-
 	# update CustomerCompany parameters
 	my $Success = $CustomerCompanyObject->CustomerCompanyUpdate(
 		%newCustomerCompanyData,
