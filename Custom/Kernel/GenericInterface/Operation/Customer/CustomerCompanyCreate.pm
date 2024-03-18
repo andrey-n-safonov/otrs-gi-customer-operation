@@ -116,11 +116,7 @@ sub Run {
 			);
 		}
 	}
-    
-    my $ErrorMessage = '';
 
-	my $ReturnData = {Success => 1,};
-	
 	# isolate CustomerCompany parameter
 	my $CustomerCompany = $Param{Data}->{CustomerCompany};
 	
@@ -138,22 +134,33 @@ sub Run {
 
 	for my $Needed (qw(CustomerID CustomerCompanyName)) {
 		if ( !$CustomerCompany->{$Needed} ) {
-			return {
+			return $Self->ReturnError(
 				ErrorCode    => 'CustomerCompanyCreate.MissingParameter',
 				ErrorMessage => "CustomerCompanyCreate: CustomerCompany->$Needed parameter is missing!",
-			};
+			);
 		}
 	}
 	
     if ( defined $Self->ValidateCustomerCompany( $CustomerCompany->{CustomerID} ) ) {
-		return {
-			ErrorCode => 'CustomerCompanyCreate.Exist',
+		return $Self->ReturnError(
+			ErrorCode    => 'CustomerCompanyCreate.Exist',
 			ErrorMessage =>"CustomerCompanyCreate: This CustomerID already exist!",
-		};
+		);
 	}
 
     my $CustomerCompanyObject = $Kernel::OM->Get('Kernel::System::CustomerCompany');
 
+	# Check CustomerCompanyName must be unique
+	my $Exist = $CustomerCompanyObject->CustomerCompanySearchDetail(
+		CustomerCompanyName     => $CustomerCompany->{CustomerCompanyName},
+	);
+	
+	if ( !IsHashRefWithData($Exist) ) {
+		return $Self->ReturnError(
+			ErrorCode => 'CustomerCompanyCreate.Exist',
+			ErrorMessage =>"CustomerCompanyCreate: $CustomerCompany->{CustomerCompanyName} already exist!",
+		);
+	}
 	my $ID = $CustomerCompanyObject->CustomerCompanyAdd(
 		CustomerID              => $CustomerCompany->{CustomerID},
 		CustomerCompanyName     => $CustomerCompany->{CustomerCompanyName},
@@ -168,16 +175,19 @@ sub Run {
 	);
 
 	if ( !$ID ) {
-		return {
-			Success      => 0,
+		return $Self->ReturnError(
+			ErrorCode    => 'CustomerCompanyCreate.Unknown',
 			ErrorMessage => 'CustomerCompany could not be created, please contact the system administrator',
-		};
+		);
 	}
 
-	$ReturnData->{Data}->{ID} = $ID;
-
 	# return result
-	return $ReturnData;
+	return {
+		Success => 1,
+		Data => {
+			ID => $ID,
+		},
+	}
 }
 
 1;
