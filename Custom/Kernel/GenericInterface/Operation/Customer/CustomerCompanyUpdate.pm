@@ -126,6 +126,13 @@ sub Run {
 		ErrorMessage => "CustomerCompanyUpdate: Authorization failing!",
 	) if !$UserID;
 
+	# if ( !IsHashRefWithData($Param{Data}->{CustomerCompany} && !IsHashRefWithData( $Param{Data}->{DynamicField} )) ) {
+		# return $Self->ReturnError(
+			# ErrorCode    => 'CustomerCompanyUpdate.EmptyRequest',
+			# ErrorMessage => "CustomerCompanyUpdate: The request data is invalid!",
+		# );
+	# }
+
 	# check needed stuff
 	for my $Needed (qw(CustomerID)) {
 		if ( !$Param{Data}->{$Needed} ) {
@@ -136,13 +143,6 @@ sub Run {
 		}
 	}
     my $CustomerID = $Param{Data}->{CustomerID};
-
-    if ( !IsHashRefWithData( $Param{Data}->{CustomerCompany} ) ) {
-		return $Self->ReturnError(
-			ErrorCode    => 'CustomerCompanyUpdate.EmptyRequest',
-			ErrorMessage => "CustomerCompanyUpdate: The request data is invalid!",
-		);
-	}
 	
 	my $Success = $Self->ValidateCustomerCompany(
 		CustomerID =>  $CustomerID,
@@ -324,6 +324,7 @@ sub _CustomerCompanyUpdate {
 	# update CustomerCompany parameters
 	my $Success = $CustomerCompanyObject->CustomerCompanyUpdate(
 		%newCustomerCompanyData,
+		UserID         => $UserID,
 	);
 	if ( !$Success ) {
 		return {
