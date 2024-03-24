@@ -158,7 +158,7 @@ sub Run {
 	my $CustomerCompany = $Param{Data}->{CustomerCompany};
 
 	# remove leading and trailing spaces
-	if ( $CustomerCompany ) {
+	if ( IsHashRefWithData($CustomerCompany) ) {
 		for my $Attribute ( sort keys %{$CustomerCompany} ) {
 			if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' && $CustomerCompany->{$Attribute} ) {
 
@@ -188,10 +188,10 @@ sub Run {
 		# check DynamicField internal structure
 		for my $DynamicFieldItem (@DynamicFieldList) {
 			if ( !IsHashRefWithData($DynamicFieldItem) ) {
-				return {
+				return $Self->ReturnError(
 					ErrorCode => 'CustomerCompanyUpdate.InvalidParameter',
 					ErrorMessage =>"CustomerCompanyUpdate: CustomerCompany->DynamicField parameter is invalid!",
-				};
+				);
 			}
 
 			# remove leading and trailing spaces
@@ -289,6 +289,7 @@ sub _CustomerCompanyUpdate {
 	my $ObjectID = $Param{ObjectID};
 	my $UserID = $Param{UserID};
 
+	goto DYNAMIC_FIELD if ( !defined $CustomerCompany );
 	# get CustomeCompany object
 	my $CustomerCompanyObject = $Kernel::OM->Get('Kernel::System::CustomerCompany');
 
@@ -299,14 +300,13 @@ sub _CustomerCompanyUpdate {
 	);
 
 	# prepare new CustomerCompany data
-	my %newCustomerCompanyData;
-	$newCustomerCompanyData{UserID} = $UserID;
-	for my $Item ( keys %{$CustomerCompany} ) {
-		if ( $CustomerCompany->{$Item} && 
-		(!$CustomerCompanyEntry{$Item} || $CustomerCompany->{$Item} ne "$CustomerCompanyEntry{$Item}" )){
-			$newCustomerCompanyData{$Item} = $CustomerCompany->{$Item};
-		}
-	}
+	my %newCustomerCompanyData = %{$CustomerCompany};
+	# for my $Item ( keys %{$CustomerCompany} ) {
+		# if ( $CustomerCompany->{$Item} && 
+		# (!$CustomerCompanyEntry{$Item} || ($CustomerCompany->{$Item} ne "$CustomerCompanyEntry{$Item}" )){
+			# $newCustomerCompanyData{$Item} = $CustomerCompany->{$Item};
+		# }
+	# }
 	
 	if (defined $newCustomerCompanyData{CustomerCompanyID}) {
 		$newCustomerCompanyData{CustomerID} = $newCustomerCompanyData{CustomerCompanyID};
@@ -334,7 +334,7 @@ sub _CustomerCompanyUpdate {
 	}else {
 		$CustomerID = $newCustomerCompanyData{CustomerID};
 	}
-
+	DYNAMIC_FIELD:
 	# set dynamic fields
 	for my $DynamicField ( @{$DynamicFieldList} ) {
 		my $Result = $Self->SetDynamicFieldValue(

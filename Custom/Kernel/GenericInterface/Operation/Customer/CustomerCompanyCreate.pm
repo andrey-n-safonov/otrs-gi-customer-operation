@@ -119,16 +119,18 @@ sub Run {
 
 	# isolate CustomerCompany parameter
 	my $CustomerCompany = $Param{Data}->{CustomerCompany};
-	
-    # remove leading and trailing spaces
-	for my $Attribute ( sort keys %{$CustomerCompany} ) {
-		if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
 
-			#remove leading spaces
-			$CustomerCompany->{$Attribute} =~ s{\A\s+}{};
+    if( IsHashRefWithData($CustomerCompany)) {
+		# remove leading and trailing spaces
+		for my $Attribute ( sort keys %{$CustomerCompany} ) {
+			if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY'  && $CustomerCompany->{$Attribute} ) {
 
-			#remove trailing spaces
-			$CustomerCompany->{$Attribute} =~ s{\s+\z}{};
+				#remove leading spaces
+				$CustomerCompany->{$Attribute} =~ s{\A\s+}{};
+
+				#remove trailing spaces
+				$CustomerCompany->{$Attribute} =~ s{\s+\z}{};
+			}
 		}
 	}
 
@@ -155,23 +157,16 @@ sub Run {
 		CustomerCompanyName     => $CustomerCompany->{CustomerCompanyName},
 	);
 	
-	if ( !IsHashRefWithData($Exist) ) {
+	if ( IsHashRefWithData($Exist) ) {
 		return $Self->ReturnError(
 			ErrorCode => 'CustomerCompanyCreate.Exist',
-			ErrorMessage =>"CustomerCompanyCreate: $CustomerCompany->{CustomerCompanyName} already exist!",
+			ErrorMessage =>"CustomerCompanyCreate: CustomerCompanyName already exist!",
 		);
 	}
 	my $ID = $CustomerCompanyObject->CustomerCompanyAdd(
-		CustomerID              => $CustomerCompany->{CustomerID},
-		CustomerCompanyName     => $CustomerCompany->{CustomerCompanyName},
-		CustomerCompanyStreet   => $CustomerCompany->{CustomerCompanyStreet} || '',
-		CustomerCompanyZIP      => $CustomerCompany->{CustomerCompanyZIP} || '',
-		CustomerCompanyCity     => $CustomerCompany->{CustomerCompanyCity} || '',
-		CustomerCompanyCountry  => $CustomerCompany->{CustomerCompanyCountry} || '',
-		CustomerCompanyURL      => $CustomerCompany->{CustomerCompanyURL} || '',
-		CustomerCompanyComment  => $CustomerCompany->{CustomerCompanyComment} || '',
-		ValidID                 => 1,
-		UserID                  => $UserID,
+		%{$CustomerCompany},
+		ValidID  => 1,
+		UserID   => $UserID,
 	);
 
 	if ( !$ID ) {
